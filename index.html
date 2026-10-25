@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#172554">
+<title>Meu Ponto</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#172554}
+header{background:#172554;color:white;padding:24px 20px;border-radius:0 0 24px 24px}
+header h1{margin:0;font-size:28px}
+header p{margin:8px 0 0;color:#cbd5e1}
+main{max-width:500px;margin:auto;padding:20px}
+.card{background:white;padding:20px;border-radius:18px;margin-bottom:16px;box-shadow:0 3px 12px #0000000a}
+.label{font-size:13px;color:#64748b}
+#clock{font-size:36px;font-weight:bold;margin:8px 0}
+#date{color:#64748b}
+button{width:100%;border:0;border-radius:12px;padding:15px;margin-top:10px;font-size:16px;font-weight:bold;background:#2563eb;color:white}
+button:disabled{background:#94a3b8}
+.secondary{background:#e2e8f0;color:#172554}
+select,input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;margin:8px 0;font-size:16px}
+.entry{padding:12px 0;border-bottom:1px solid #e2e8f0;font-size:14px}
+small{color:#64748b}
+.notice{font-size:12px;color:#64748b;line-height:1.5}
+</style>
+</head>
+<body>
+<header><h1>Meu Ponto</h1><p>Seu controle de jornada</p></header>
+<main>
+<section class="card">
+<div class="label">HORÁRIO ATUAL</div>
+<div id="clock">--:--:--</div>
+<div id="date"></div>
+</section>
+<section class="card">
+<label for="employee">Nome do funcionário</label>
+<input id="employee" placeholder="Digite seu nome" autocomplete="name">
+<label for="event">Registro</label>
+<select id="event">
+<option>Entrada</option>
+<option>Início do intervalo</option>
+<option>Fim do intervalo</option>
+<option>Saída</option>
+</select>
+<button id="record">Registrar ponto</button>
+<p id="feedback" role="status"></p>
+</section>
+<section class="card">
+<h3>Histórico de registros</h3>
+<div id="history"><small>Nenhum registro nesta sessão.</small></div>
+<button class="secondary" id="export">Exportar histórico CSV</button>
+<p class="notice">Versão inicial de teste. Os registros ficam somente neste aparelho e podem ser apagados pelo navegador. Não use ainda como registro oficial de jornada. O horário depende do relógio do aparelho e não é validado por servidor.</p>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+function updateClock(){
+const now=new Date();
+$('clock').textContent=now.toLocaleTimeString('pt-BR');
+$('date').textContent=now.toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+updateClock();setInterval(updateClock,1000);
+let records=[];
+$('record').addEventListener('click',()=>{
+const name=$('employee').value.trim();
+if(!name){$('feedback').textContent='Digite seu nome antes de registrar.';return}
+const now=new Date();
+const item={name,event:$('event').value,iso:now.toISOString(),date:now.toLocaleDateString('pt-BR'),time:now.toLocaleTimeString('pt-BR')};
+records.push(item);
+$('history').innerHTML=records.slice().reverse().map(r=>'<div class="entry"><b>'+r.event+'</b> — '+r.time+'<br><small>'+r.date+' · '+r.name+'</small></div>').join('');
+$('feedback').textContent='Registro adicionado nesta sessão.';
+});
+$('export').addEventListener('click',()=>{
+if(!records.length){$('feedback').textContent='Ainda não há registros para exportar.';return}
+const csv='Funcionário;Registro;Data;Hora\n'+records.map(r=>[r.name,r.event,r.date,r.time].map(v=>'"'+v.replace(/"/g,'""')+'"').join(';')).join('\n');
+const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='meu-ponto.csv';a.click();URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
